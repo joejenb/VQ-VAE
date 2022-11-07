@@ -100,7 +100,7 @@ def train(model, train_loader, optimiser):
 
         recon_error = F.mse_loss(X_recon, X) / config.data_variance
         kl_error = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim = 1), dim = 0)
-        loss = recon_error + kl_error
+        loss = recon_error + 0.001 * kl_error
 
         loss.backward()
         optimiser.step()
