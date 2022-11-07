@@ -77,6 +77,7 @@ def get_data_loaders():
         lengths = [int(len(dataset)*0.7), int(len(dataset)*0.1), int(len(dataset)*0.2)]
         train_set, val_set, test_set = random_split(dataset, lengths)
 
+        config.data_variance = np.var(train_set.data / 255.0)
         num_classes = 0
 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=config.batch_size, shuffle=True)
