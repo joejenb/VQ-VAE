@@ -1,9 +1,8 @@
+from Residual import ResidualStack
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from Residual import ResidualStack
-
 
 class Encoder(nn.Module):
     def __init__(self, in_channels, num_hiddens, num_residual_layers, num_residual_hiddens):
