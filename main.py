@@ -15,7 +15,7 @@ from torchvision import transforms
 
 from VAE import VAE
 
-PATH = os.getcwd() + "/../thumbnails128x128"
+PATH = "../thumbnails128x128"
 
 wandb.init(project="VAE")
 wandb.watch_called = False # Re-run the model without restarting the runtime, unnecessary after our next release
