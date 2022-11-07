@@ -109,10 +109,10 @@ class VAE(nn.Module):
     def interpolate(self, x, y):
         if (x.size() == y.size()):
             zx = self._encoder(x)
-            zx = self._pre_vq_conv(zx)
+            zx = self._pre_sample(zx)
 
             zy = self._encoder(y)
-            zy = self._pre_vq_conv(zy)
+            zy = self._pre_sample(zy)
 
             z = (zx + zy) / 2
 
@@ -130,7 +130,7 @@ class VAE(nn.Module):
 
     def forward(self, x):
         z = self._encoder(x)
-        z = F.relu(self._pre_vq_conv(z))
+        z = F.relu(self._pre_sample(z))
 
         z_shape = z.shape
 
