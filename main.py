@@ -95,10 +95,13 @@ def train(model, train_loader, optimiser):
         X = X.to(model.device)
         optimiser.zero_grad()
 
-        X_recon = model(X)
-        recon_error = F.mse_loss(X_recon, X) / config.data_variance
-        recon_error.backward()
+        X_recon, mu, log_var = model(X)
 
+        recon_error = F.mse_loss(X_recon, X) / config.data_variance
+        kl_error = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim = 1), dim = 0)
+        loss = recon_error + kl_error
+
+        loss.backward()
         optimiser.step()
         
         train_res_recon_error += recon_error.item()
@@ -121,7 +124,7 @@ def test(model, test_loader):
         for X, _ in test_loader:
             X = X.to(model.device)
 
-            X_recon = model(X)
+            X_recon, _, _ = model(X)
             recon_error = F.mse_loss(X_recon, X) / config.data_variance
             
             test_res_recon_error += recon_error.item()
