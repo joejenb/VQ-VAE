@@ -123,10 +123,10 @@ class VAE(nn.Module):
                                       kernel_size=1, 
                                       stride=1)
 
-        self.mu = nn.Linear(config.embedding_dim * 64, config.embedding_dim * 64)
-        self.log_var = nn.Linear(config.embedding_dim * 64, config.embedding_dim * 64)
+        self.mu = nn.Linear(config.embedding_dim * 64, config.embedding_dim * 2)
+        self.log_var = nn.Linear(config.embedding_dim * 64, config.embedding_dim * 2)
 
-        self.pre_decode = nn.Linear(config.embedding_dim * 64, config.embedding_dim * 64)
+        self.pre_decode = nn.Linear(config.embedding_dim * 2, config.embedding_dim * 64)
 
         self._decoder = Decoder(config.num_filters,
                             config.num_channels,
