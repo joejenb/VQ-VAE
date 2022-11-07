@@ -3,16 +3,19 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from torch.utils.data import random_split
 
 import numpy as np
 
 import wandb
+import os
 
 import torchvision
 from torchvision import transforms
 
 from VAE import VAE
 
+PATH = os.getcwd() + "/Data/thumbnails128x128"
 
 wandb.init(project="VAE")
 wandb.watch_called = False # Re-run the model without restarting the runtime, unnecessary after our next release
@@ -23,7 +26,7 @@ config.batch_size = 256          # input batch size for training (default: 64)
 config.epochs = 50             # number of epochs to train (default: 10)
 config.no_cuda = False         # disables CUDA training
 config.seed = 42               # random seed (default: 42)
-config.image_size = 96
+config.image_size = 128
 config.log_interval = 1     # how many batches to wait before logging training status
 config.learning_rate = 1e-3
 config.momentum = 0.1
@@ -35,7 +38,7 @@ config.num_embeddings = 512
 config.num_filters = 64
 config.embedding_dim = config.num_filters
 config.num_channels = 3
-config.data_set = "CELEBA"
+config.data_set = "FFHQ"
 
 def get_data_loaders():
     if config.data_set == "MNIST":
@@ -63,16 +66,17 @@ def get_data_loaders():
         num_classes = 10
         config.data_variance = np.var(train_set.data / 255.0)
 
-    elif config.data_set == "CELEBA":
+    elif config.data_set == "FFHQ":
         transform = transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Resize(config.image_size),
                 transforms.Normalize((0.5,0.5,0.5), (1.0,1.0,1.0))
             ])
 
-        train_set = torchvision.datasets.CelebA(root="/CELEBA/", split='train', transform=transform, download=True)
-        val_set = torchvision.datasets.CelebA(root="/CELEBA/", split='test', transform=transform, download=True)
-        test_set = torchvision.datasets.CelebA(root="/CELEBA/", split='test', transform=transform, download=True)
+        dataset = torchvision.datasets.ImageFolder(PATH, transform=transform)
+        lengths = [int(len(dataset)*0.7), int(len(dataset)*0.1), int(len(dataset)*0.2)]
+        train_set, val_set, test_set = random_split(dataset, lengths)
+
         num_classes = 0
 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=config.batch_size, shuffle=True)
