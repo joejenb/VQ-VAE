@@ -1,29 +1,47 @@
-from matplotlib.transforms import Transform
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import random_split
 
+import argparse
+
 import numpy as np
 
 import wandb
 import os
+
+'''
+-   Use azure ml to import dataset
+-   Save whole model at the end -> done
+-   Make sure using train and eval -> done
+-   Look at how you can repeat jobs in vs code
+-   Look at Azure subscriptions, multiple GPUs
+-   Look at horovod
+'''
 
 import torchvision
 from torchvision import transforms
 
 from VAE import VAE
 
-PATH = "../thumbnails128x128"
+from azureml.core import Workspace, Dataset
+
+ws = Workspace.from_config()
+
+#parser = argparse.ArgumentParser()
+#parser.add_argument("--data", type=str)
+
+#args = parser.parse_args()
+#PATH = args.data 
 
 wandb.init(project="VAE")
 wandb.watch_called = False # Re-run the model without restarting the runtime, unnecessary after our next release
 
 # WandB – Config is a variable that holds and saves hyperparameters and inputs
 config = wandb.config          # Initialize config
-config.batch_size = 256          # input batch size for training (default: 64)
-config.epochs = 50             # number of epochs to train (default: 10)
+config.batch_size = 64          # input batch size for training (default: 64)
+config.epochs = 100             # number of epochs to train (default: 10)
 config.no_cuda = False         # disables CUDA training
 config.seed = 42               # random seed (default: 42)
 config.image_size = 128
@@ -39,6 +57,9 @@ config.num_filters = 64
 config.embedding_dim = config.num_filters
 config.num_channels = 3
 config.data_set = "FFHQ"
+
+dataset = Dataset.get_by_name(config.data_set)
+print(dataset)
 
 def get_data_loaders():
     if config.data_set == "MNIST":
@@ -153,9 +174,12 @@ def main():
 
     wandb.watch(model, log="all")
 
-    for _ in range(config.epochs):
+    for epoch in range(config.epochs):
         train(model, train_loader, optimiser)
         test(model, test_loader)
+
+        if not epoch % 5:
+            torch.save(model, "VAE-{config.batch_size}.pth")
 
 if __name__ == '__main__':
     main()
