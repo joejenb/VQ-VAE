@@ -39,7 +39,7 @@ config.learning_rate = 1e-3
 config.momentum = 0.1
 
 config.num_hiddens = 128
-config.num_residual_layers = 2
+config.num_residual_layers = 3
 config.num_residual_hiddens = 32
 config.num_embeddings = 512
 config.num_filters = 64
@@ -103,11 +103,10 @@ def train(model, train_loader, optimiser):
         X = X.to(model.device)
         optimiser.zero_grad()
 
-        X_recon, mu, log_var = model(X)
+        X_recon, quant_error = model(X)
 
         recon_error = F.mse_loss(X_recon, X) / config.data_variance
-        kl_error = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim = 1), dim = 0)
-        loss = recon_error + 0.00025 * kl_error
+        loss = recon_error + quant_error
 
         loss.backward()
         optimiser.step()
@@ -125,23 +124,27 @@ def test(model, test_loader):
 
     test_res_recon_error = 0
 
+    # Last batch is of different size so simplest to do like this
     Y, _ = next(iter(test_loader))
     Y = Y.to(model.device)
+
+    Z, _ = next(iter(test_loader))
+    Z = Z.to(model.device)
 
     with torch.no_grad():
         for X, _ in test_loader:
             X = X.to(model.device)
 
-            X_recon, _, _ = model(X)
+            X_recon, _ = model(X)
             recon_error = F.mse_loss(X_recon, X) / config.data_variance
             
             test_res_recon_error += recon_error.item()
 
-        XY_inter = model.interpolate(X, Y)
+        ZY_inter = model.interpolate(Z, Y)
 
         example_images = [wandb.Image(img) for img in X]
         example_reconstructions = [wandb.Image(recon_img) for recon_img in X_recon]
-        example_interpolations = [wandb.Image(inter_img) for inter_img in XY_inter]
+        example_interpolations = [wandb.Image(inter_img) for inter_img in ZY_inter]
 
     wandb.log({
         "Test Inputs": example_images,

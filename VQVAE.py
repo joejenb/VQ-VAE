@@ -23,8 +23,8 @@ class Encoder(nn.Module):
 
         self._conv_3 = nn.Conv2d(in_channels=num_hiddens,
                                  out_channels=num_hiddens,
-                                 kernel_size=4,
-                                 stride=2, padding=1)
+                                 kernel_size=3,
+                                 stride=1, padding=1)
 
         self._conv_4 = nn.Conv2d(in_channels=num_hiddens,
                                  out_channels=num_hiddens,
@@ -71,8 +71,8 @@ class Decoder(nn.Module):
 
         self._conv_trans_2 = nn.ConvTranspose2d(in_channels=num_hiddens//2, 
                                                 out_channels=num_hiddens//2,
-                                                kernel_size=4, 
-                                                stride=2, padding=1)
+                                                kernel_size=3, 
+                                                stride=1, padding=1)
 
         self._conv_trans_3 = nn.ConvTranspose2d(in_channels=num_hiddens//2, 
                                                 out_channels=out_channels,
@@ -93,9 +93,9 @@ class Decoder(nn.Module):
         return self._conv_trans_3(x)
 
 
-class VAE(nn.Module):
+class VQVAE(nn.Module):
     def __init__(self, config, device):
-        super(VAE, self).__init__()
+        super(VQVAE, self).__init__()
 
         self.device = device
 
@@ -131,12 +131,7 @@ class VAE(nn.Module):
 
             z = (zx + zy) / 2
 
-            z_shape = z.shape
-            flat_z = z.view(z_shape[0], z_shape[1], self._embedding_dim)
-
-            flat_z_quantised = self._vq_vae(flat_z)
-
-            z_quantised = flat_z_quantised.view(z_shape)
+            _, z_quantised, _, _ = self._vq_vae(z)
 
             xy_inter = self._decoder(z_quantised)
 
