@@ -13,9 +13,12 @@ import os
 
 '''
 -   Use azure ml to import dataset
+-   Can sue sdk to set environment, dataset and experiment -> nope must use yml to sepcify env and experiment
+-> others can only be specified in run submit i.e to push code
+
 -   Save whole model at the end -> done
 -   Make sure using train and eval -> done
--   Look at how you can repeat jobs in vs code
+-   Look at how you can repeat jobs in vs code -> done
 -   Look at Azure subscriptions, multiple GPUs
 -   Look at horovod
 '''
@@ -27,15 +30,14 @@ from VAE import VAE
 
 from azureml.core import Workspace, Dataset
 
-ws = Workspace.from_config()
-
 #parser = argparse.ArgumentParser()
 #parser.add_argument("--data", type=str)
 
 #args = parser.parse_args()
 #PATH = args.data 
 
-wandb.init(project="VAE")
+project_name = "VAE"
+wandb.init(project=project_name)
 wandb.watch_called = False # Re-run the model without restarting the runtime, unnecessary after our next release
 
 # WandB – Config is a variable that holds and saves hyperparameters and inputs
@@ -58,8 +60,10 @@ config.embedding_dim = config.num_filters
 config.num_channels = 3
 config.data_set = "FFHQ"
 
-dataset = Dataset.get_by_name(config.data_set)
-print(dataset)
+
+ws = Workspace.from_config()
+dataset = Dataset.get_by_name(ws, config.data_set)
+
 
 def get_data_loaders():
     if config.data_set == "MNIST":
