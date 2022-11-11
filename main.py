@@ -4,38 +4,17 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import random_split
 
+import torchvision
+from torchvision import transforms
+
 import argparse
+import dill
 
 import numpy as np
 
 import wandb
-import os
 
-'''
--   Use azure ml to import dataset
--   Can sue sdk to set environment, dataset and experiment -> nope must use yml to sepcify env and experiment
--> others can only be specified in run submit i.e to push code
-
--   Save whole model at the end -> done
--   Make sure using train and eval -> done
--   Look at how you can repeat jobs in vs code -> done
-
--   Look at Azure subscriptions, multiple GPUs
--   Look at horovod
-
--   Need to train and evaluate VQ-VAE with interpolation
--   Need to train and evaluate HOP-VAE with interpolation
--   Need to train and evaluate HOP-VAE with transformed representations and interpolation
--   Need to train and evaluate HOP-VAE with transformed representations and joint distribution and interpolation
--   Need to train and evaluate HOP-VAE with transformed representations and joint distribution and quantisation of interpolations
-
--   Do first 3 and then email
-'''
-
-import torchvision
-from torchvision import transforms
-
-from VAE import VAE
+from VQVAE import VQVAE
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--data", type=str)
@@ -43,16 +22,18 @@ parser.add_argument("--data", type=str)
 args = parser.parse_args()
 PATH = args.data 
 
-wandb.init(project="VAE")
+wandb.init(project="VQ-VAE")
 wandb.watch_called = False # Re-run the model without restarting the runtime, unnecessary after our next release
 
 # WandB – Config is a variable that holds and saves hyperparameters and inputs
 config = wandb.config          # Initialize config
-config.batch_size = 64          # input batch size for training (default: 64)
+config.data_set = "FFHQ"
+config.image_size = 64
+config.num_channels = 3
+config.batch_size = 256          # input batch size for training (default: 64)
 config.epochs = 100             # number of epochs to train (default: 10)
 config.no_cuda = False         # disables CUDA training
 config.seed = 42               # random seed (default: 42)
-config.image_size = 64
 config.log_interval = 1     # how many batches to wait before logging training status
 config.learning_rate = 1e-3
 config.momentum = 0.1
@@ -63,8 +44,8 @@ config.num_residual_hiddens = 32
 config.num_embeddings = 512
 config.num_filters = 64
 config.embedding_dim = config.num_filters
-config.num_channels = 3
-config.data_set = "FFHQ"
+config.commitment_cost = 0.25
+config.decay = 0.99
 
 def get_data_loaders():
     if config.data_set == "MNIST":
@@ -144,8 +125,8 @@ def test(model, test_loader):
 
     test_res_recon_error = 0
 
-    example_images = []
-    example_reconstructions = []
+    Y, _ = next(iter(test_loader))
+    Y = Y.to(model.device)
 
     with torch.no_grad():
         for X, _ in test_loader:
@@ -156,12 +137,16 @@ def test(model, test_loader):
             
             test_res_recon_error += recon_error.item()
 
+        XY_inter = model.interpolate(X, Y)
+
         example_images = [wandb.Image(img) for img in X]
         example_reconstructions = [wandb.Image(recon_img) for recon_img in X_recon]
+        example_interpolations = [wandb.Image(inter_img) for inter_img in XY_inter]
 
     wandb.log({
         "Test Inputs": example_images,
         "Test Reconstruction": example_reconstructions,
+        "Test Interpolations": example_interpolations,
         "Test Reconstruction Error": test_res_recon_error / len(test_loader.dataset)
         })
 
@@ -174,17 +159,18 @@ def main():
     train_loader, val_loader, test_loader, num_classes = get_data_loaders()
 
     ### Add in correct parameters
-    model = VAE(config, device).to(device)
+    model = VQVAE(config, device).to(device)
     optimiser = optim.Adam(model.parameters(), lr=config.learning_rate, amsgrad=False)
 
     wandb.watch(model, log="all")
 
     for epoch in range(config.epochs):
+
         train(model, train_loader, optimiser)
         test(model, test_loader)
 
         if not epoch % 5:
-            torch.save(model, "VAE-{config.batch_size}.pth")
+            torch.save(model, f'outputs/VQVAE-{config.batch_size}.pth', pickle_module=dill)
 
 if __name__ == '__main__':
     main()

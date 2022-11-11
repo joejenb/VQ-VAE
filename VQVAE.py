@@ -1,8 +1,11 @@
 from Residual import ResidualStack
 
+from VectorQuantiser import VectorQuantiserEMA
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 
 class Encoder(nn.Module):
     def __init__(self, in_channels, num_hiddens, num_residual_layers, num_residual_hiddens):
@@ -25,11 +28,6 @@ class Encoder(nn.Module):
 
         self._conv_4 = nn.Conv2d(in_channels=num_hiddens,
                                  out_channels=num_hiddens,
-                                 kernel_size=4,
-                                 stride=2, padding=1)
-
-        self._conv_5 = nn.Conv2d(in_channels=num_hiddens,
-                                 out_channels=num_hiddens,
                                  kernel_size=3,
                                  stride=1, padding=1)
 
@@ -49,9 +47,6 @@ class Encoder(nn.Module):
         x = F.relu(x)
 
         x = self._conv_4(x)
-        x = F.relu(x)
-
-        x = self._conv_5(x)
         return self._residual_stack(x)
 
 
@@ -80,11 +75,6 @@ class Decoder(nn.Module):
                                                 stride=2, padding=1)
 
         self._conv_trans_3 = nn.ConvTranspose2d(in_channels=num_hiddens//2, 
-                                                out_channels=num_hiddens//2,
-                                                kernel_size=4, 
-                                                stride=2, padding=1)
-       
-        self._conv_trans_4 = nn.ConvTranspose2d(in_channels=num_hiddens//2, 
                                                 out_channels=out_channels,
                                                 kernel_size=4, 
                                                 stride=2, padding=1)
@@ -100,10 +90,7 @@ class Decoder(nn.Module):
         x = self._conv_trans_2(x)
         x = F.relu(x)
         
-        x = self._conv_trans_3(x)
-        x = F.relu(x)
-
-        return self._conv_trans_4(x)
+        return self._conv_trans_3(x)
 
 
 class VAE(nn.Module):
@@ -118,15 +105,13 @@ class VAE(nn.Module):
                                 config.num_residual_layers, 
                                 config.num_residual_hiddens)
 
-        self._pre_sample = nn.Conv2d(in_channels=config.num_hiddens, 
+        self._pre_vq_conv = nn.Conv2d(in_channels=config.num_hiddens, 
                                       out_channels=config.num_filters,
                                       kernel_size=1, 
                                       stride=1)
 
-        self.mu = nn.Linear(config.embedding_dim * 64, config.embedding_dim * 2)
-        self.log_var = nn.Linear(config.embedding_dim * 64, config.embedding_dim * 2)
-
-        self.pre_decode = nn.Linear(config.embedding_dim * 2, config.embedding_dim * 64)
+        self._vq_vae = VectorQuantiserEMA(config.num_embeddings, config.embedding_dim, 
+                                            config.commitment_cost, config.decay)
 
         self._decoder = Decoder(config.num_filters,
                             config.num_channels,
@@ -135,50 +120,34 @@ class VAE(nn.Module):
                             config.num_residual_hiddens
                         )
 
-    def reparameterize(self, mu, log_var):
-        std = torch.exp(0.5 * log_var)
-        eps = torch.randn_like(std)
-        return eps * std + mu
-
 
     def interpolate(self, x, y):
         if (x.size() == y.size()):
             zx = self._encoder(x)
-            zx = self._pre_sample(zx)
+            zx = self._pre_vq_conv(zx)
 
             zy = self._encoder(y)
-            zy = self._pre_sample(zy)
+            zy = self._pre_vq_conv(zy)
 
             z = (zx + zy) / 2
 
             z_shape = z.shape
             flat_z = z.view(z_shape[0], z_shape[1], self._embedding_dim)
 
-            flat_z_quantised = self._hopfield(flat_z)#flat_z)
+            flat_z_quantised = self._vq_vae(flat_z)
 
             z_quantised = flat_z_quantised.view(z_shape)
 
-            xy_recon = self._decoder(z_quantised)
+            xy_inter = self._decoder(z_quantised)
 
-            return xy_recon
+            return xy_inter
         return x
 
     def forward(self, x):
         z = self._encoder(x)
-        z = F.relu(self._pre_sample(z))
+        z = self._pre_vq_conv(z)
 
-        z_shape = z.shape
+        quant_loss, z_quantised, _, _ = self._vq_vae(z)
+        x_recon = self._decoder(z_quantised)
 
-        flat_z = z.view(z_shape[0], -1)
-
-        mu = self.mu(flat_z)
-        log_var = self.log_var(flat_z)
-        z_sampled = self.reparameterize(mu, log_var)
-
-        flat_z_sampled = self.pre_decode(z_sampled)
-
-        z_sampled = flat_z_sampled.view(z_shape)
-
-        x_recon = self._decoder(z_sampled)
-
-        return x_recon, mu, log_var
+        return x_recon, quant_loss 
