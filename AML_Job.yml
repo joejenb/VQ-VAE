@@ -6,7 +6,7 @@ code: '.'
 experiment_name: VAE
 
 #use scripts in Python, R, Java, Julia, C#. Here we have shown python
-command: python main.py
+command: python main.py --data ${{inputs.FFHQ}}
 
 # invoke completions (Ctrl+Space, Cmd+Space) to see the list of environments available
 environment: 'azureml:Deep_Learning111:1'
@@ -15,3 +15,8 @@ environment: 'azureml:Deep_Learning111:1'
 compute: azureml:ModelTraining
 
 # This defines the input data to mount. The names of the items in inputs can be referenced in the command
+inputs:
+  FFHQ:
+    type: uri_folder
+    mode: ro_mount
+    path: azureml:FFHQ-DATASET:1
