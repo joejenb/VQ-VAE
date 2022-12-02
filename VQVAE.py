@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from PixelCNN import PixelCNN
 
 class Encoder(nn.Module):
     def __init__(self, in_channels, num_hiddens, num_residual_layers, num_residual_hiddens):
@@ -113,6 +114,9 @@ class VQVAE(nn.Module):
 
         self._vq_vae = VectorQuantiserEMA(config.num_embeddings, config.embedding_dim, 
                                             config.commitment_cost, config.decay)
+        
+        self.fit_prior = False
+        self._prior = PixelCNN(config)
 
         self._decoder = Decoder(config.num_filters,
                             config.num_channels,
@@ -122,8 +126,15 @@ class VQVAE(nn.Module):
                         )
 
     def sample(self):
-        z = torch.randn(1, self._embedding_dim, self._representation_dim, self._representation_dim)
-        _, z_quantised, _, _ = self._vq_vae(z)
+        z_sample_indices = self._prior.sample()
+        z_sample_indices = z_sample_indices.type(torch.int64)
+
+        z_sample = torch.zeros(z_sample_indices.shape[0], self._num_embeddings, device=self.device)
+        z_sample.scatter_(1, z_sample_indices, 1)
+        
+        # Quantize and unflatten
+        z_quantised = torch.matmul(z_sample, self._vq_vae._embedding.weight).view(1, self._representation_dim, self._representation_dim, self._embedding_dim)
+        z_quantised = z_quantised.permute(0, 3, 1, 2).contiguous()
 
         x_sample = self._decoder(z_quantised)
 
@@ -139,7 +150,17 @@ class VQVAE(nn.Module):
 
             z = (zx + zy) / 2
 
-            _, z_quantised, _, _ = self._vq_vae(z)
+            _, z_quantised, z_indices, _ = self._vq_vae(z)
+
+            z_denoised_indices = self._prior.denoise(z_indices)
+            z_denoised_indices = z_denoised_indices.type(torch.int64)
+
+            z_sample = torch.zeros(z_denoised_indices.shape[0], self._num_embeddings, device=self.device)
+            z_sample.scatter_(1, z_denoised_indices, 1)
+            
+            # Quantize and unflatten
+            z_quantised = torch.matmul(z_sample, self._vq_vae._embedding.weight).view(z.shape)
+            z_quantised = z_quantised.permute(0, 3, 1, 2).contiguous()
 
             xy_inter = self._decoder(z_quantised)
 
@@ -150,7 +171,14 @@ class VQVAE(nn.Module):
         z = self._encoder(x)
         z = self._pre_vq_conv(z)
 
-        quant_loss, z_quantised, _, _ = self._vq_vae(z)
-        x_recon = self._decoder(z_quantised)
+        quant_loss, z_quantised, z_indices, _ = self._vq_vae(z)
 
-        return x_recon, quant_loss 
+        if self.fit_prior:
+            z_logits = self._prior(z_indices.detach())
+            z_prediction_error = F.cross_entropy(z_logits, z_indices)
+
+            x_recon = self._decoder(z_quantised)
+            return x_recon, quant_loss, z_prediction_error
+
+        x_recon = self._decoder(z_quantised)
+        return x_recon, quant_loss, 0

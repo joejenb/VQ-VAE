@@ -86,10 +86,10 @@ def train(model, train_loader, optimiser, scheduler):
         X = X.to(model.device)
         optimiser.zero_grad()
 
-        X_recon, quant_error = model(X)
+        X_recon, quant_error, Z_prediction_error = model(X)
 
         recon_error = F.mse_loss(X_recon, X) / config.data_variance
-        loss = recon_error + quant_error
+        loss = recon_error + quant_error + Z_prediction_error
 
         loss.backward()
         optimiser.step()
@@ -120,7 +120,7 @@ def test(model, test_loader):
         for X, _ in test_loader:
             X = X.to(model.device)
 
-            X_recon, _ = model(X)
+            X_recon, _, _ = model(X)
             recon_error = F.mse_loss(X_recon, X) / config.data_variance
             
             test_res_recon_error += recon_error.item()
@@ -163,6 +163,9 @@ def main():
     wandb.watch(model, log="all")
 
     for epoch in range(config.epochs):
+
+        if epoch > config.prior_start:
+            model.fit_prior = True
 
         train(model, train_loader, optimiser, scheduler)
         test(model, test_loader)

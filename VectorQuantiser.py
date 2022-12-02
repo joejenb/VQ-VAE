@@ -40,6 +40,7 @@ class VectorQuantiserEMA(nn.Module):
         
         # Quantize and unflatten
         quantized = torch.matmul(encodings, self._embedding.weight).view(input_shape)
+        encoding_indices = encoding_indices.view(input_shape[0], input_shape[1], input_shape[2], 1)
         
         # Use EMA to update the embedding vectors
         if self.training:
@@ -64,7 +65,6 @@ class VectorQuantiserEMA(nn.Module):
         # Straight Through Estimator
         quantized = inputs + (quantized - inputs).detach()
         avg_probs = torch.mean(encodings, dim=0)
-        perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
         
         # convert quantized from BHWC -> BCHW
-        return loss, quantized.permute(0, 3, 1, 2).contiguous(), perplexity, encodings
+        return loss, quantized.permute(0, 3, 1, 2).contiguous(), encoding_indices.permute(0, 3, 1, 2).contiguous(), encodings
