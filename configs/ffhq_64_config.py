@@ -11,13 +11,13 @@ config["gamma"] = 0.95
 config["weight_decay"] = 0.0
 
 config["num_hiddens"] = 128
-config["num_residual_layers"] = 2
+config["num_residual_layers"] = 4
 config["num_residual_hiddens"] = 32
 config["num_filters"] = 64
 config["embedding_dim"] = 64
 config["num_embeddings"] = 512
 config["num_channels"] = 3
 config["data_set"] = "FFHQ"
-config["representation_dim"] = 16
+config["representation_dim"] = 8
 config["commitment_cost"] = 0.25
 config["decay"] = 0.99
