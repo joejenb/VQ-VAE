@@ -38,15 +38,16 @@ class Encoder(nn.Module):
 
     def forward(self, inputs):
         x = self._conv_1(inputs)
-        x = F.relu(x)
+        x = F.gelu(x)
         
         x = self._conv_2(x)
-        x = F.relu(x)
+        x = F.gelu(x)
         
         x = self._conv_3(x)
-        x = F.relu(x)
+        x = F.gelu(x)
 
         x = self._conv_4(x)
+        #Should have 2048 units -> embedding_dim * repres_dim^2
         return self._residual_stack(x)
 
 
@@ -71,13 +72,13 @@ class Decoder(nn.Module):
 
         self._conv_trans_2 = nn.ConvTranspose2d(in_channels=num_hiddens//2, 
                                                 out_channels=num_hiddens//2,
-                                                kernel_size=3, 
-                                                stride=1, padding=1)
+                                                kernel_size=4, 
+                                                stride=2, padding=1)
 
         self._conv_trans_3 = nn.ConvTranspose2d(in_channels=num_hiddens//2, 
                                                 out_channels=out_channels,
-                                                kernel_size=4, 
-                                                stride=2, padding=1)
+                                                kernel_size=3, 
+                                                stride=1, padding=1)
 
     def forward(self, inputs):
         x = self._conv_1(inputs)
@@ -85,13 +86,12 @@ class Decoder(nn.Module):
         x = self._residual_stack(x)
         
         x = self._conv_trans_1(x)
-        x = F.relu(x)
+        x = F.gelu(x)
 
         x = self._conv_trans_2(x)
-        x = F.relu(x)
+        x = F.gelu(x)
         
         return self._conv_trans_3(x)
-
 
 class VQVAE(nn.Module):
     def __init__(self, config, device):
@@ -100,6 +100,7 @@ class VQVAE(nn.Module):
         self.device = device
 
         self._embedding_dim = config.embedding_dim
+        self._representation_dim = config.representation_dim
 
         self._encoder = Encoder(config.num_channels, config.num_hiddens,
                                 config.num_residual_layers, 
@@ -120,6 +121,13 @@ class VQVAE(nn.Module):
                             config.num_residual_hiddens
                         )
 
+    def sample(self):
+        z = torch.randn(1, self._embedding_dim, self._representation_dim, self._representation_dim)
+        _, z_quantised, _, _ = self._vq_vae(z)
+
+        x_sample = self._decoder(z_quantised)
+
+        return x_sample
 
     def interpolate(self, x, y):
         if (x.size() == y.size()):
