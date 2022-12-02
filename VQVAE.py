@@ -116,7 +116,7 @@ class VQVAE(nn.Module):
                                             config.commitment_cost, config.decay)
         
         self.fit_prior = False
-        self._prior = PixelCNN(config)
+        self._prior = PixelCNN(config, device)
 
         self._decoder = Decoder(config.num_filters,
                             config.num_channels,
