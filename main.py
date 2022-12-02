@@ -120,7 +120,7 @@ def test(model, test_loader):
         for X, _ in test_loader:
             X = X.to(model.device)
 
-            X_recon, _, _ = model(X)
+            X_recon, _ = model(X)
             recon_error = F.mse_loss(X_recon, X) / config.data_variance
             
             test_res_recon_error += recon_error.item()
