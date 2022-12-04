@@ -23,4 +23,4 @@ config["commitment_cost"] = 0.25
 config["decay"] = 0.99
 
 config["num_categories"] = config["num_embeddings"]
-config["prior_start"] = 0
+config["prior_start"] = 2
