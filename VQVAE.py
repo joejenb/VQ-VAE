@@ -150,7 +150,7 @@ class VQVAE(nn.Module):
 
             z = (zx + zy) / 2
 
-            _, z_quantised, z_indices, _ = self._vq_vae(z)
+            _, z_quantised, z_indices = self._vq_vae(z)
 
             z_denoised_indices = self._prior.denoise(z_indices)
             z_denoised_indices = z_denoised_indices.type(torch.int64)
@@ -171,7 +171,7 @@ class VQVAE(nn.Module):
         z = self._encoder(x)
         z = self._pre_vq_conv(z)
 
-        quant_loss, z_quantised, z_indices, _ = self._vq_vae(z)
+        quant_loss, z_quantised, z_indices = self._vq_vae(z)
 
         if self.fit_prior:
             z_logits = self._prior(z_indices.detach())

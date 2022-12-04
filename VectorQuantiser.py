@@ -67,4 +67,4 @@ class VectorQuantiserEMA(nn.Module):
         avg_probs = torch.mean(encodings, dim=0)
         
         # convert quantized from BHWC -> BCHW
-        return loss, quantized.permute(0, 3, 1, 2).contiguous(), encoding_indices.permute(0, 3, 1, 2).contiguous(), encodings
+        return loss, quantized.permute(0, 3, 1, 2).contiguous(), encoding_indices.permute(0, 3, 1, 2).contiguous()
