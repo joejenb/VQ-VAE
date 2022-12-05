@@ -166,6 +166,7 @@ def main():
     scheduler = optim.lr_scheduler.ExponentialLR(optimiser, gamma=config.gamma)
 
     wandb.watch(model, log="all")
+    print(model.device)
 
     for epoch in range(config.epochs):
 
