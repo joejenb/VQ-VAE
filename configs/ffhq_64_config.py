@@ -11,7 +11,7 @@ config["gamma"] = 0.99
 config["weight_decay"] = 0.0
 
 config["num_hiddens"] = 128
-config["num_residual_layers"] = 2
+config["num_residual_layers"] = 0
 config["num_residual_hiddens"] = 32
 config["num_filters"] = 32
 config["embedding_dim"] = 32
