@@ -182,7 +182,7 @@ class VQVAE(nn.Module):
             z_prediction_error = F.cross_entropy(z_logits, z_indices.squeeze(1).detach())
 
             x_recon = self._decoder(z_quantised)
-            return x_recon, quant_loss, z_prediction_error
+            return x_recon.detach(), quant_loss.detach(), z_prediction_error
 
         x_recon = self._decoder(z_quantised)
         return x_recon, quant_loss, 0

@@ -163,16 +163,18 @@ def main():
                 pre_state_dict[key] = model.state_dict()[key]
         #model.load_state_dict(torch.load(checkpoint_location, map_location=device))
         model.load_state_dict(pre_state_dict)
-
-    optimiser = optim.Adam(model.parameters(), lr=config.learning_rate, amsgrad=False)
+    #Add optimiser for pixelnn
+    optimiser = optim.Adam(model.parameters(), lr=config.vq_learning_rate, amsgrad=False)
     scheduler = optim.lr_scheduler.ExponentialLR(optimiser, gamma=config.gamma)
 
     wandb.watch(model, log="all")
 
     for epoch in range(config.epochs):
 
-        if epoch > config.prior_start:
+        if epoch > config.prior_start and not model.fit_prior:
             model.fit_prior = True
+            optimiser = optim.Adam(model.parameters(), lr=config.pixel_learning_rate)
+            scheduler = optim.lr_scheduler.ExponentialLR(optimiser, gamma=config.gamma)
 
         train(model, train_loader, optimiser, scheduler)
         test(model, test_loader)
