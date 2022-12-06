@@ -155,6 +155,7 @@ class VQVAE(nn.Module):
             _, z_quantised, z_indices = self._vq_vae(z)
 
             z_denoised_indices = self._prior.denoise(z_indices).type(torch.int64)
+            print(z_denoised_indices.size(), z_quantised.size())
             z_denoised_indices = z_denoised_indices.permute(0, 2, 3, 1).contiguous()
             z_denoised_indices = z_denoised_indices.view(-1, 1)
 
@@ -163,6 +164,7 @@ class VQVAE(nn.Module):
             
             # Quantize and unflatten
             z_quantised = torch.matmul(z_sample, self._vq_vae._embedding.weight).view(z.shape)
+            print(z_quantised.size())
             z_quantised = z_quantised.permute(0, 3, 1, 2).contiguous()
 
             xy_inter = self._decoder(z_quantised)
