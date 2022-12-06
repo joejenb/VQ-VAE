@@ -195,7 +195,7 @@ class VQVAE(nn.Module):
             z_quantised = z_quantised.permute(0, 3, 1, 2).contiguous()
 
             x_recon = self._decoder(z_quantised)
-            return x_recon, quant_loss.detach(), z_prediction_error
+            return x_recon, quant_loss.detach(), z_prediction_error.detach()
 
         x_recon = self._decoder(z_quantised)
         return x_recon, quant_loss, 0
