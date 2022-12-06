@@ -173,7 +173,7 @@ def main():
         if epoch > config.prior_start:
             model.fit_prior = True
 
-        train(model, train_loader, optimiser, scheduler)
+        #train(model, train_loader, optimiser, scheduler)
         test(model, test_loader)
 
         if not epoch % 5:
