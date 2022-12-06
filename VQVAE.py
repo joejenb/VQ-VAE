@@ -128,7 +128,7 @@ class VQVAE(nn.Module):
                         )
 
     def sample(self):
-        z_sample_indices = self.prior.sample().type(torch.int64)
+        z_sample_indices = self.prior.sample()
         z_sample_indices = z_sample_indices.permute(0, 2, 3, 1).contiguous()
         z_sample_indices = z_sample_indices.view(-1, 1)
 
@@ -155,7 +155,7 @@ class VQVAE(nn.Module):
 
             _, z_quantised, z_indices = self._vq_vae(z)
 
-            z_denoised_indices = self.prior.denoise(z_indices).type(torch.int64)
+            z_denoised_indices = self.prior.denoise(z_indices / self._num_embeddings).type(torch.int64)
             z_denoised_indices = z_denoised_indices.permute(0, 2, 3, 1).contiguous()
             z_denoised_indices = z_denoised_indices.view(-1, 1)
 
@@ -179,8 +179,8 @@ class VQVAE(nn.Module):
         quant_loss, z_quantised, z_indices = self._vq_vae(z)
 
         if self.fit_prior:
-            z_logits = self.prior(z_indices.detach())
-            z_prediction_error = F.cross_entropy(z_logits, Variable(z_indices.squeeze(1).detach()).long())
+            z_logits = self.prior(z_indices.detach() / self._num_embeddings)
+            z_prediction_error = F.cross_entropy(z_logits, z_indices.squeeze(1).detach())
 
             x_recon = self._decoder(z_quantised)
             return x_recon.detach(), quant_loss.detach(), 100 * z_prediction_error
