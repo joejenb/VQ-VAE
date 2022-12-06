@@ -159,10 +159,14 @@ def main():
     if os.path.exists(checkpoint_location):
         #model.load_state_dict(torch.load(checkpoint_location, map_location=device))
         pre_state_dict = torch.load(checkpoint_location, map_location=device)
+
+        for key in pre_state_dict.state_dict().keys():
+            if key[:5] == "prior":
+                del pre_state_dict[key]
+
         for key in model.state_dict().keys():
             if key[:5] == "prior":
                 pre_state_dict[key] = model.state_dict()[key]
-                #del pre_state_dict["_" + key]
         #model.load_state_dict(torch.load(checkpoint_location, map_location=device))
         model.load_state_dict(pre_state_dict)
 
