@@ -5,6 +5,7 @@ from VectorQuantiser import VectorQuantiserEMA
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autorgrad import Variable
 
 from PixelCNN.PixelCNN import PixelCNN
 
@@ -179,7 +180,7 @@ class VQVAE(nn.Module):
 
         if self.fit_prior:
             z_logits = self.prior(z_indices.detach())
-            z_prediction_error = F.cross_entropy(z_logits, z_indices.squeeze(1).detach().long())
+            z_prediction_error = F.cross_entropy(z_logits, Variable(z_indices.squeeze(1).detach()).long())
 
             x_recon = self._decoder(z_quantised)
             return x_recon.detach(), quant_loss.detach(), 100 * z_prediction_error
