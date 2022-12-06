@@ -26,7 +26,7 @@ class Encoder(nn.Module):
         self._conv_3 = nn.Conv2d(in_channels=num_hiddens,
                                  out_channels=num_hiddens,
                                  kernel_size=4,
-                                 stride=2, padding=1)
+                                 stride=1, padding=2)
 
         self._conv_4 = nn.Conv2d(in_channels=num_hiddens,
                                  out_channels=num_hiddens,
@@ -70,7 +70,7 @@ class Decoder(nn.Module):
         self._conv_trans_1 = nn.ConvTranspose2d(in_channels=num_hiddens, 
                                                 out_channels=num_hiddens//2,
                                                 kernel_size=4, 
-                                                stride=2, padding=1)
+                                                stride=1, padding=2)
 
         self._conv_trans_2 = nn.ConvTranspose2d(in_channels=num_hiddens//2, 
                                                 out_channels=num_hiddens//2,
@@ -195,7 +195,7 @@ class VQVAE(nn.Module):
             z_quantised = z_quantised.permute(0, 3, 1, 2).contiguous()
 
             x_recon = self._decoder(z_quantised)
-            return x_recon, quant_loss.detach(), z_prediction_error.detach()
+            return x_recon, quant_loss.detach(), z_prediction_error
 
         x_recon = self._decoder(z_quantised)
         return x_recon, quant_loss, 0

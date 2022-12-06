@@ -18,10 +18,10 @@ config["embedding_dim"] = 64
 config["num_embeddings"] = 512
 config["num_channels"] = 3
 config["data_set"] = "FFHQ"
-config["representation_dim"] = 8
+config["representation_dim"] = 17
 config["commitment_cost"] = 0.25
 config["decay"] = 0.99
 
 config["pixel_learning_rate"] = 1e-4
 config["num_categories"] = config["num_embeddings"]
-config["prior_start"] = 0
+config["prior_start"] = 5
