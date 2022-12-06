@@ -117,7 +117,7 @@ class VQVAE(nn.Module):
                                             config.commitment_cost, config.decay)
         
         self.fit_prior = False
-        self._prior = PixelCNN(config, device)
+        self.prior = PixelCNN(config, device)
 
         self._decoder = Decoder(config.num_filters,
                             config.num_channels,
@@ -127,7 +127,7 @@ class VQVAE(nn.Module):
                         )
 
     def sample(self):
-        z_sample_indices = self._prior.sample().type(torch.int64)
+        z_sample_indices = self.prior.sample().type(torch.int64)
         z_sample_indices = z_sample_indices.permute(0, 2, 3, 1).contiguous()
         z_sample_indices = z_sample_indices.view(-1, 1)
 
@@ -154,7 +154,7 @@ class VQVAE(nn.Module):
 
             _, z_quantised, z_indices = self._vq_vae(z)
 
-            z_denoised_indices = self._prior.denoise(z_indices).type(torch.int64)
+            z_denoised_indices = self.prior.denoise(z_indices).type(torch.int64)
             z_denoised_indices = z_denoised_indices.permute(0, 2, 3, 1).contiguous()
             z_denoised_indices = z_denoised_indices.view(-1, 1)
 
@@ -178,7 +178,7 @@ class VQVAE(nn.Module):
         quant_loss, z_quantised, z_indices = self._vq_vae(z)
 
         if self.fit_prior:
-            z_logits = self._prior(z_indices.detach())
+            z_logits = self.prior(z_indices.detach())
             z_prediction_error = F.cross_entropy(z_logits, z_indices.squeeze(1).detach())
 
             x_recon = self._decoder(z_quantised)

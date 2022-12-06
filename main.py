@@ -156,13 +156,8 @@ def main():
 
     ### Add in correct parameters
     model = VQVAE(config, device).to(device)
-    if os.path.exists(checkpoint_location):
-        pre_state_dict = torch.load(checkpoint_location, map_location=device)
-        for key in model.state_dict().keys():
-            if key not in pre_state_dict.keys():
-                pre_state_dict[key] = model.state_dict()[key]
-        #model.load_state_dict(torch.load(checkpoint_location, map_location=device))
-        model.load_state_dict(pre_state_dict)
+    model.load_state_dict(torch.load(checkpoint_location, map_location=device))
+
     #Add optimiser for pixelnn
     optimiser = optim.Adam(model.parameters(), lr=config.vq_learning_rate, amsgrad=False)
     scheduler = optim.lr_scheduler.ExponentialLR(optimiser, gamma=config.gamma)
@@ -173,7 +168,7 @@ def main():
 
         if epoch > config.prior_start and not model.fit_prior:
             model.fit_prior = True
-            optimiser = optim.Adam(model.parameters(), lr=config.pixel_learning_rate)
+            optimiser = optim.Adam(model.prior.parameters(), lr=config.pixel_learning_rate)
             scheduler = optim.lr_scheduler.ExponentialLR(optimiser, gamma=config.gamma)
 
         train(model, train_loader, optimiser, scheduler)
