@@ -5,7 +5,7 @@ from VectorQuantiser import VectorQuantiserEMA
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autorgrad import Variable
+from torch.autograd import Variable
 
 from PixelCNN.PixelCNN import PixelCNN
 
