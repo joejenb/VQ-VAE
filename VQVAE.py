@@ -127,8 +127,9 @@ class VQVAE(nn.Module):
                         )
 
     def sample(self):
-        z_sample_indices = self._prior.sample()
-        z_sample_indices = z_sample_indices.type(torch.int64)
+        z_sample_indices = self._prior.sample().type(torch.int64)
+        z_sample_indices = z_sample_indices.permute(0, 2, 3, 1).contiguous()
+        z_sample_indices = z_sample_indices.view(-1, 1)
 
         z_sample = torch.zeros(z_sample_indices.shape[0], self._num_embeddings, device=self.device)
         z_sample.scatter_(1, z_sample_indices, 1)
@@ -153,8 +154,9 @@ class VQVAE(nn.Module):
 
             _, z_quantised, z_indices = self._vq_vae(z)
 
-            z_denoised_indices = self._prior.denoise(z_indices)
-            z_denoised_indices = z_denoised_indices.type(torch.int64)
+            z_denoised_indices = self._prior.denoise(z_indices).type(torch.int64)
+            z_denoised_indices = z_denoised_indices.permute(0, 2, 3, 1).contiguous()
+            z_denoised_indices = z_denoised_indices.view(-1, 1)
 
             z_sample = torch.zeros(z_denoised_indices.shape[0], self._num_embeddings, device=self.device)
             z_sample.scatter_(1, z_denoised_indices, 1)
