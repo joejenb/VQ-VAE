@@ -98,7 +98,7 @@ def train(model, train_loader, optimiser, scheduler):
 
     scheduler.step()
     wandb.log({
-        "Train Reconstruction Error": train_res_recon_error / len(train_loader.dataset)
+        "Train Reconstruction Error": (train_res_recon_error + Z_prediction_error) / len(train_loader.dataset)
     })
 
 
@@ -129,6 +129,7 @@ def test(model, test_loader):
 
         example_images = [wandb.Image(img) for img in X]
         example_reconstructions = [wandb.Image(recon_img) for recon_img in X_recon]
+        example_samples = [wandb.Image(model.sample()) for _ in X_recon]
         example_Z = [wandb.Image(recon_img) for recon_img in Z]
         example_Y = [wandb.Image(recon_img) for recon_img in Y]
         example_interpolations = [wandb.Image(inter_img) for inter_img in ZY_inter]
@@ -137,6 +138,7 @@ def test(model, test_loader):
         "Test Inputs": example_images,
         "Test Reconstruction": example_reconstructions,
         "Test Interpolations": example_interpolations,
+        "Test Samples": example_samples,
         "Test Z": example_Z,
         "Test Y": example_Y,
         "Test Reconstruction Error": test_res_recon_error / len(test_loader.dataset)
