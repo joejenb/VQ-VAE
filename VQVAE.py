@@ -24,8 +24,8 @@ class Encoder(nn.Module):
 
         self._conv_3 = nn.Conv2d(in_channels=num_hiddens,
                                  out_channels=num_hiddens,
-                                 kernel_size=4,
-                                 stride=2, padding=1)
+                                 kernel_size=3,
+                                 stride=1, padding=1)
 
         self._conv_4 = nn.Conv2d(in_channels=num_hiddens,
                                  out_channels=num_hiddens,
@@ -68,8 +68,8 @@ class Decoder(nn.Module):
         
         self._conv_trans_1 = nn.ConvTranspose2d(in_channels=num_hiddens, 
                                                 out_channels=num_hiddens//2,
-                                                kernel_size=4, 
-                                                stride=2, padding=1)
+                                                kernel_size=3, 
+                                                stride=1, padding=1)
 
         self._conv_trans_2 = nn.ConvTranspose2d(in_channels=num_hiddens//2, 
                                                 out_channels=num_hiddens//2,
@@ -116,7 +116,7 @@ class VQVAE(nn.Module):
                                             config.commitment_cost, config.decay)
         
         self.fit_prior = False
-        self._prior = lambda x: x#PixelCNN(config, device)
+        self._prior = PixelCNN(config, device)
 
         self._decoder = Decoder(config.num_filters,
                             config.num_channels,
