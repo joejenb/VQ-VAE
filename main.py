@@ -156,7 +156,8 @@ def main():
 
     ### Add in correct parameters
     model = VQVAE(config, device).to(device)
-    model.load_state_dict(torch.load(checkpoint_location, map_location=device))
+    if os.path.exists(checkpoint_location):
+        model.load_state_dict(torch.load(checkpoint_location, map_location=device))
 
     #Add optimiser for pixelnn
     optimiser = optim.Adam(model.parameters(), lr=config.vq_learning_rate, amsgrad=False)
