@@ -101,6 +101,7 @@ class VQVAE(nn.Module):
         self.device = device
 
         self._embedding_dim = config.embedding_dim
+        self._num_embeddings = config.num_embeddings
         self._representation_dim = config.representation_dim
 
         self._encoder = Encoder(config.num_channels, config.num_hiddens,
