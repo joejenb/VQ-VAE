@@ -175,7 +175,6 @@ class VQVAE(nn.Module):
         z = self._encoder(x)
         z = self._pre_vq_conv(z)
 
-        print(z.size())
         quant_loss, z_quantised, z_indices = self._vq_vae(z)
 
         if self.fit_prior:
