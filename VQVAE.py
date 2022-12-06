@@ -180,7 +180,7 @@ class VQVAE(nn.Module):
 
         if self.fit_prior:
             z_logits = self.prior(z_indices.detach() / self._num_embeddings)
-            z_probabilities = F.softmax(logits[:, :, row, column], dim=1)
+            z_probabilities = F.softmax(z_logits, dim=1)
             z_prediction_error = F.cross_entropy(z_logits, z_indices.squeeze(1).detach())
 
             z_recon = torch.multinomial(z_probabilities, 1)
