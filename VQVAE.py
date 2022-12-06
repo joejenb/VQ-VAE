@@ -128,7 +128,7 @@ class VQVAE(nn.Module):
                         )
 
     def sample(self):
-        z_sample_indices = self.prior.sample()
+        z_sample_indices = self.prior.sample().type(torch.int64)
         z_sample_indices = z_sample_indices.permute(0, 2, 3, 1).contiguous()
         z_sample_indices = z_sample_indices.view(-1, 1)
 
