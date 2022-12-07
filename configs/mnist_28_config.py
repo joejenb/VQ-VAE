@@ -23,6 +23,6 @@ config["commitment_cost"] = 0.25
 config["decay"] = 0.99
 
 config["pixel_learning_rate"] = 1e-4
-config["pixel_gamma"] = 0.90
+config["pixel_gamma"] = 0.80
 config["num_categories"] = config["num_embeddings"]
 config["prior_start"] = 10
