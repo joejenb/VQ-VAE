@@ -161,7 +161,7 @@ def main():
         model.load_state_dict(torch.load(checkpoint_location, map_location=device))
     #Add optimiser for pixelnn
     optimiser = optim.Adam(model.parameters(), lr=config.vq_learning_rate, amsgrad=False)
-    scheduler = optim.lr_scheduler.ExponentialLR(optimiser, gamma=config.gamma)
+    scheduler = optim.lr_scheduler.ExponentialLR(optimiser, gamma=config.vq_gamma)
 
     wandb.watch(model, log="all")
 
@@ -170,7 +170,7 @@ def main():
         if epoch > config.prior_start and not model.fit_prior:
             model.fit_prior = True
             optimiser = optim.Adam(model.prior.parameters(), lr=config.pixel_learning_rate)
-            scheduler = optim.lr_scheduler.ExponentialLR(optimiser, gamma=config.gamma)
+            scheduler = optim.lr_scheduler.ExponentialLR(optimiser, gamma=config.pixel_gamma)
 
         train(model, train_loader, optimiser, scheduler)
         test(model, test_loader)
