@@ -182,7 +182,8 @@ class VQVAE(nn.Module):
         if self.fit_prior:
             z_logits = self.prior((z_indices.float() / self._num_embeddings) - 0.5)
 
-            nll = F.cross_entropy(z_logits, z_indices.detach(), reduction='none')
+            print(z_logits.size(), z_indices.size())
+            nll = F.cross_entropy(z_logits, z_indices.detach())#, reduction='none')
             z_prediction_error = nll.mean() #* torch.log2(torch.exp(torch.Tensor(1))).to(nll.device)
             z_prediction_error = z_prediction_error.mean()
 
