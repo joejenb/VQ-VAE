@@ -177,7 +177,6 @@ class VQVAE(nn.Module):
         z = self._pre_vq_conv(z)
 
         quant_loss, z_quantised, z_indices = self._vq_vae(z)
-        print(z_quantised.size())
 
         if self.fit_prior:
             z_logits = self.prior(z_indices.detach() / self._num_embeddings)
