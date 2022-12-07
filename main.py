@@ -26,7 +26,7 @@ parser.add_argument("--data", type=str)
 args = parser.parse_args()
 PATH = args.data 
 
-wandb.init(project="VQ-VAE", config=config)
+wandb.init(project="VQ-VAE", config=vq_config)
 wandb.watch_called = False # Re-run the model without restarting the runtime, unnecessary after our next release
 
 # WandB – Config is a variable that holds and saves hyperparameters and inputs
