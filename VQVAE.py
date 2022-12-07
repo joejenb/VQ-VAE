@@ -180,8 +180,10 @@ class VQVAE(nn.Module):
         z_indices = Variable(z_indices)
 
         if self.fit_prior:
-            z_logits = self.prior((z_indices / self._num_embeddings) - 0.5)
-            z_prediction_error = F.cross_entropy(z_logits, z_indices.squeeze(1).detach())
+            z_logits = self.prior((z_indices.float() / self._num_embeddings) - 0.5)
+
+            nll = F.cross_entropy(z_logits, z_indices.long().detach(), reduction='none')
+            z_prediction_error = nll.mean(dim=[1,2,3]) * torch.log2(torch.exp(1)).mean()
 
             x_recon = self._decoder(z_quantised)
             return x_recon, quant_loss.detach(), z_prediction_error
