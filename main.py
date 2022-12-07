@@ -31,6 +31,9 @@ wandb.watch_called = False # Re-run the model without restarting the runtime, un
 
 # WandB – Config is a variable that holds and saves hyperparameters and inputs
 config = wandb.config          # Initialize config
+class MakeConfig:
+    def __init__(self, config):
+        self.__dict__ = config
 
 def get_data_loaders():
     if config.data_set == "MNIST":
@@ -157,7 +160,7 @@ def main():
     output_location = f'outputs/{config.data_set}-{config.image_size}.ckpt'
 
     ### Add in correct parameters
-    model = VQVAE(vq_config, prior_config, device).to(device)
+    model = VQVAE(MakeConfig(vq_config), MakeConfig(prior_config), device).to(device)
     if os.path.exists(checkpoint_location):
         model.load_state_dict(torch.load(checkpoint_location, map_location=device))
     #Add optimiser for pixelnn
