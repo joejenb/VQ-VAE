@@ -35,7 +35,7 @@ class MakeConfig:
 # WandB – Config is a variable that holds and saves hyperparameters and inputs
 config = wandb.config          # Initialize config
 vq_config = MakeConfig(vq_config)
-pixel_config = MakeConfig(prior_config)
+prior_config = MakeConfig(prior_config)
 
 def get_data_loaders():
     if config.data_set == "MNIST":
