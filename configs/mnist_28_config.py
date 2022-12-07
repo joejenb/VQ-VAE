@@ -21,4 +21,4 @@ config["data_set"] = "MNIST"
 config["representation_dim"] = 8
 config["commitment_cost"] = 0.25
 config["decay"] = 0.99
-config["prior_start"] = 0
+config["prior_start"] = 10
