@@ -157,7 +157,7 @@ def main():
     output_location = f'outputs/{config.data_set}-{config.image_size}.ckpt'
 
     ### Add in correct parameters
-    model = VQVAE(vq_config, pixel_config, device).to(device)
+    model = VQVAE(vq_config, prior_config, device).to(device)
     if os.path.exists(checkpoint_location):
         model.load_state_dict(torch.load(checkpoint_location, map_location=device))
     #Add optimiser for pixelnn
