@@ -17,7 +17,7 @@ import wandb
 
 from VQVAE import VQVAE
 #from configs.ffhq_64_config import config
-from configs.mnist_64_config import config
+from configs.mnist_28_config import config
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--data", type=str)
