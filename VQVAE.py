@@ -179,7 +179,7 @@ class VQVAE(nn.Module):
         quant_loss, z_quantised, z_indices = self._vq_vae(z)
 
         if self.fit_prior:
-            z_logits = self.prior((1. * z_indices.detach()) / self._num_embeddings)
+            z_logits = self.prior((z_indices.detach() / self._num_embeddings) - 0.5)
             z_prediction_error = F.cross_entropy(z_logits, z_indices.squeeze(1).detach())
 
             x_recon = self._decoder(z_quantised)
