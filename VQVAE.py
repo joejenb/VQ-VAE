@@ -187,7 +187,7 @@ class VQVAE(nn.Module):
             z_prediction_error = z_prediction_error.mean()
 
             x_recon = self._decoder(z_quantised)
-            return x_recon, quant_loss.detach(), z_prediction_error
+            return x_recon.detach(), quant_loss.detach(), z_prediction_error
 
         x_recon = self._decoder(z_quantised)
         return x_recon, quant_loss, 0
