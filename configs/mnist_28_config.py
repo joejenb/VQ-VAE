@@ -22,6 +22,6 @@ config["representation_dim"] = 8
 config["commitment_cost"] = 0.25
 config["decay"] = 0.99
 
-config["pixel_learning_rate"] = 5e-5
+config["pixel_learning_rate"] = 9e-5
 config["num_categories"] = config["num_embeddings"]
-config["prior_start"] = 0
+config["prior_start"] = 10
