@@ -24,4 +24,4 @@ config["decay"] = 0.99
 
 config["pixel_learning_rate"] = 1e-4
 config["num_categories"] = config["num_embeddings"]
-config["prior_start"] = 0
+config["prior_start"] = 10
