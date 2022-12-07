@@ -17,7 +17,8 @@ import wandb
 
 from VQVAE import VQVAE
 #from configs.ffhq_64_config import config
-from configs.mnist_28_config import config
+from configs.mnist_28_config import config as vq_config
+from PixelCNN.configs.mnist_28_config import config as prior_config
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--data", type=str)
@@ -156,12 +157,12 @@ def main():
     output_location = f'outputs/{config.data_set}-{config.image_size}.ckpt'
 
     ### Add in correct parameters
-    model = VQVAE(config, device).to(device)
+    model = VQVAE(vq_config, pixel_config, device).to(device)
     if os.path.exists(checkpoint_location):
         model.load_state_dict(torch.load(checkpoint_location, map_location=device))
     #Add optimiser for pixelnn
-    optimiser = optim.Adam(model.parameters(), lr=config.vq_learning_rate, amsgrad=False)
-    scheduler = optim.lr_scheduler.ExponentialLR(optimiser, gamma=config.vq_gamma)
+    optimiser = optim.Adam(model.parameters(), lr=vq_config.learning_rate, amsgrad=False)
+    scheduler = optim.lr_scheduler.ExponentialLR(optimiser, gamma=vq_config.gamma)
 
     wandb.watch(model, log="all")
 
@@ -169,8 +170,8 @@ def main():
 
         if epoch > config.prior_start and not model.fit_prior:
             model.fit_prior = True
-            optimiser = optim.Adam(model.prior.parameters(), lr=config.pixel_learning_rate)
-            scheduler = optim.lr_scheduler.ExponentialLR(optimiser, gamma=config.pixel_gamma)
+            optimiser = optim.Adam(model.prior.parameters(), lr=prior_config.learning_rate)
+            scheduler = optim.lr_scheduler.ExponentialLR(optimiser, gamma=prior_config.gamma)
 
         train(model, train_loader, optimiser, scheduler)
         test(model, test_loader)

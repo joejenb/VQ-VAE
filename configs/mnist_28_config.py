@@ -7,7 +7,7 @@ config["image_size"] = 28
 config["log_interval"] = 1     # how many batches to wait before logging training status
 config["vq_learning_rate"] = 1e-3
 config["momentum"] = 0.1
-config["vq_gamma"] = 0.99
+config["gamma"] = 0.99
 config["weight_decay"] = 0.0
 
 config["num_hiddens"] = 128
@@ -21,8 +21,3 @@ config["data_set"] = "MNIST"
 config["representation_dim"] = 8
 config["commitment_cost"] = 0.25
 config["decay"] = 0.99
-
-config["pixel_learning_rate"] = 1e-4
-config["pixel_gamma"] = 0.80
-config["num_categories"] = config["num_embeddings"]
-config["prior_start"] = 10

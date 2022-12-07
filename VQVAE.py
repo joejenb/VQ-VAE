@@ -96,7 +96,7 @@ class Decoder(nn.Module):
         return self._conv_trans_3(x)
 
 class VQVAE(nn.Module):
-    def __init__(self, config, device):
+    def __init__(self, config, prior_config, device):
         super(VQVAE, self).__init__()
 
         self.device = device
@@ -118,7 +118,7 @@ class VQVAE(nn.Module):
                                             config.commitment_cost, config.decay)
         
         self.fit_prior = False
-        self.prior = PixelCNN(config, device)
+        self.prior = PixelCNN(prior_config, device)
 
         self._decoder = Decoder(config.num_filters,
                             config.num_channels,
