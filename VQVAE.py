@@ -177,23 +177,11 @@ class VQVAE(nn.Module):
         z = self._pre_vq_conv(z)
 
         quant_loss, z_quantised, z_indices = self._vq_vae(z)
+        print(z_quantised.size())
 
         if self.fit_prior:
             z_logits = self.prior(z_indices.detach() / self._num_embeddings)
-            #z_probabilities = F.softmax(z_logits, dim=1)
             z_prediction_error = F.cross_entropy(z_logits, z_indices.squeeze(1).detach())
-
-            '''Original had good reconstruction maybe you are sampling wrong?'''
-            '''z_recon_indices = torch.argmax(z_logits, dim=1, keepdim=True).permute(0, 2, 3, 1).contiguous()
-            z_recon_indices = z_recon_indices.view(-1, 1)
-
-            z_sample = torch.zeros(z_recon_indices.shape[0], self._num_embeddings, device=self.device)
-            z_sample.scatter_(1, z_recon_indices, 1)
-            
-            # Quantize and unflatten
-            z_perm_shape = (z.shape[0], self._representation_dim, self._representation_dim, self._embedding_dim)
-            z_quantised = torch.matmul(z_sample, self._vq_vae._embedding.weight).view(z_perm_shape)
-            z_quantised = z_quantised.permute(0, 3, 1, 2).contiguous()'''
 
             x_recon = self._decoder(z_quantised)
             return x_recon, quant_loss.detach(), z_prediction_error
