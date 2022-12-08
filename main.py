@@ -161,11 +161,19 @@ def main():
     checkpoint_location = f'checkpoints/{config.data_set}-{config.image_size}.ckpt'
     output_location = f'outputs/{config.data_set}-{config.image_size}.ckpt'
 
-    ### Add in correct parameters
     model = VQVAE(vq_config, prior_config, device).to(device)
     if os.path.exists(checkpoint_location):
-        model.load_state_dict(torch.load(checkpoint_location, map_location=device))
-    #Add optimiser for pixelnn
+        #model.load_state_dict(torch.load(checkpoint_location, map_location=device))
+        pre_state_dict = torch.load(checkpoint_location, map_location=device)
+        for key in pre_state_dict.keys():
+            if key not in model.state_dict().keys():
+                del pre_state_dict[key]
+
+        for key in model.state_dict().keys():
+            if key not in pre_state_dict.keys():
+                pre_state_dict[key] = model.state_dict()[key]
+        model.load_state_dict(pre_state_dict)
+
     optimiser = optim.Adam(model.parameters(), lr=vq_config.learning_rate, amsgrad=False)
     scheduler = optim.lr_scheduler.ExponentialLR(optimiser, gamma=vq_config.gamma)
 
