@@ -21,4 +21,4 @@ config["data_set"] = "FFHQ"
 config["representation_dim"] = 17
 config["commitment_cost"] = 0.25
 config["decay"] = 0.99
-config["prior_start"] = 30
+config["prior_start"] = -1
