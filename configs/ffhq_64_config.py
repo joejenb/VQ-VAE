@@ -7,7 +7,7 @@ config["image_size"] = 64
 config["log_interval"] = 1     # how many batches to wait before logging training status
 config["learning_rate"] = 1e-3
 config["momentum"] = 0.1
-config["gamma"] = 0.98
+config["gamma"] = 0.95
 config["weight_decay"] = 0.0
 
 config["num_hiddens"] = 128
