@@ -7,6 +7,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
+import numpy as np
+
 from PixelCNN.PixelCNN import PixelCNN
 
 class Encoder(nn.Module):
@@ -155,7 +157,7 @@ class VQVAE(nn.Module):
 
             _, z_quantised, z_indices = self._vq_vae(z)
 
-            z_denoised_indices = self.prior.denoise(z_indices / self._num_embeddings).type(torch.int64)
+            z_denoised_indices = self.prior.denoise(z_indices).type(torch.int64)
             z_denoised_indices = z_denoised_indices.permute(0, 2, 3, 1).contiguous()
             z_denoised_indices = z_denoised_indices.view(-1, 1)
 
@@ -179,12 +181,13 @@ class VQVAE(nn.Module):
         quant_loss, z_quantised, z_indices = self._vq_vae(z)
 
         if self.fit_prior:
-            z_logits = self.prior((z_indices.float() / self._num_embeddings) - 0.5)
+            #May need to make indices type long
+            z_logits = self.prior(z_indices)
 
-            nll = F.cross_entropy(z_logits, z_indices.detach(), reduction='none')
-            z_prediction_error = nll.mean() #* torch.log2(torch.exp(torch.Tensor(1))).to(nll.device)
-            z_prediction_error = z_prediction_error.mean()
-
+            z_cross_entropy = F.cross_entropy(z_logits, z_indices, reduction='none')
+            z_prediction_error = z_cross_entropy.mean(dim=[1,2,3]) * np.log2(np.exp(1))
+            z_prediction_error = z_prediction_error.mean()            
+            
             x_recon = self._decoder(z_quantised)
             return x_recon.detach(), quant_loss.detach(), z_prediction_error
 
