@@ -165,9 +165,13 @@ def main():
     if os.path.exists(checkpoint_location):
         #model.load_state_dict(torch.load(checkpoint_location, map_location=device))
         pre_state_dict = torch.load(checkpoint_location, map_location=device)
+        to_delete = []
         for key in pre_state_dict.keys():
             if key not in model.state_dict().keys():
-                del pre_state_dict[key]
+                to_delete.append(key)
+
+        for key in to_delete:
+            del pre_state_dict[key]
 
         for key in model.state_dict().keys():
             if key not in pre_state_dict.keys():
