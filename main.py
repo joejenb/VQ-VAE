@@ -17,7 +17,7 @@ import wandb
 
 from VQVAE import VQVAE
 
-from configs.ffhq_64_config import vq_config
+from configs.ffhq_64_config import config as vq_config
 from PixelCNN.configs.ffhq_17_config import config as prior_config
 
 parser = argparse.ArgumentParser()
