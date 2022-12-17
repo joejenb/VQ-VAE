@@ -174,6 +174,9 @@ class VQVAE(nn.Module):
             return xy_inter
         return x
 
+    def reconstruct(self, x):
+        return self.forward(x)
+
     def forward(self, x):
         z = self._encoder(x)
         z = self._pre_vq_conv(z)
