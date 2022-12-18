@@ -195,4 +195,4 @@ class VQVAE(nn.Module):
             return x_recon.detach(), quant_loss.detach(), z_prediction_error
 
         x_recon = self._decoder(z_quantised)
-        return x_recon, quant_loss, 0
+        return x_recon, quant_loss, torch.zeros(1, requires_grad=True).to(self.device)
