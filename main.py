@@ -13,7 +13,7 @@ from VQVAE import VQVAE
 
 from utils import get_data_loaders, get_prior_optimiser, load_from_checkpoint, MakeConfig
 
-from configs.pixelcnn_mnist_28_config import config
+from configs.mnist_28_config import config
 
 wandb.init(project="VQ-VAE", config=config)
 config = MakeConfig(config)
