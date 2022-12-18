@@ -1,7 +1,3 @@
-from Residual import ResidualStack
-
-from VectorQuantiser import VectorQuantiserEMA
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,7 +5,10 @@ from torch.autograd import Variable
 
 import numpy as np
 
-from PixelCNN.PixelCNN import PixelCNN
+from Residual import ResidualStack
+from VectorQuantiser import VectorQuantiserEMA
+
+from utils import get_prior, straight_through_round
 
 class Encoder(nn.Module):
     def __init__(self, in_channels, num_hiddens, num_residual_layers, num_residual_hiddens):
@@ -98,13 +97,14 @@ class Decoder(nn.Module):
         return self._conv_trans_3(x)
 
 class VQVAE(nn.Module):
-    def __init__(self, config, prior_config, device):
+    def __init__(self, config, device):
         super(VQVAE, self).__init__()
 
         self.device = device
 
-        self._embedding_dim = config.embedding_dim
         self._num_embeddings = config.num_embeddings
+        self._embedding_dim = config.embedding_dim
+        self.index_dim = config.index_dim
         self._representation_dim = config.representation_dim
 
         self._encoder = Encoder(config.num_channels, config.num_hiddens,
@@ -120,7 +120,7 @@ class VQVAE(nn.Module):
                                             config.commitment_cost, config.decay)
         
         self.fit_prior = False
-        self.prior = PixelCNN(prior_config, device)
+        self.prior = get_prior(config, device)
 
         self._decoder = Decoder(config.num_filters,
                             config.num_channels,
@@ -157,7 +157,7 @@ class VQVAE(nn.Module):
 
             _, z_quantised, z_indices = self._vq_vae(z)
 
-            z_denoised_indices = self.prior.denoise(z_indices).type(torch.int64)
+            z_denoised_indices = self.prior.reconstruct(z_indices).type(torch.int64)
             z_denoised_indices = z_denoised_indices.permute(0, 2, 3, 1).contiguous()
             z_denoised_indices = z_denoised_indices.view(-1, 1)
 

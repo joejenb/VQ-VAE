@@ -1,11 +1,6 @@
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.utils.data import random_split
-
-import torchvision
-from torchvision import transforms
 
 import argparse
 
@@ -16,72 +11,12 @@ import wandb
 
 from VQVAE import VQVAE
 
-from configs.mnist_28_config import config as vq_config
-from PixelCNN.configs.mnist_8_config import config as prior_config
+from utils import get_data_loaders, get_prior_optimiser, load_from_checkpoint, MakeConfig
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--data", type=str)
+from configs.pixelcnn_mnist_28_config import config
 
-args = parser.parse_args()
-PATH = args.data 
-
-wandb.init(project="VQ-VAE", config=vq_config)
-wandb.watch_called = False # Re-run the model without restarting the runtime, unnecessary after our next release
-class MakeConfig:
-    def __init__(self, config):
-        self.__dict__ = config
-
-# WandB – Config is a variable that holds and saves hyperparameters and inputs
-config = wandb.config          # Initialize config
-vq_config = MakeConfig(vq_config)
-prior_config = MakeConfig(prior_config)
-
-def get_data_loaders():
-    if config.data_set == "MNIST":
-        transform = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Resize(config.image_size),
-                transforms.Normalize((0.1307,), (0.3081,))
-            ])
-
-        train_set = torchvision.datasets.MNIST(root="/MNIST/", train=True, download=True, transform=transform)
-        val_set = torchvision.datasets.MNIST(root="/MNIST/", train=False, download=True, transform=transform)
-        test_set = torchvision.datasets.MNIST(root="/MNIST/", train=False, download=True, transform=transform)
-        num_classes = 10
-        config.data_variance = 1
-
-    elif config.data_set == "CIFAR10":
-        transform=transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Resize(config.image_size),
-                transforms.Normalize((0.5,0.5,0.5), (1.0,1.0,1.0))
-            ])
-        train_set = torchvision.datasets.CIFAR10(root="/CIFAR10/", train=True, download=True, transform=transform)
-        val_set = torchvision.datasets.CIFAR10(root="/CIFAR10/", train=False, download=True, transform=transform)
-        test_set = torchvision.datasets.CIFAR10(root="/CIFAR10/", train=False, download=True, transform=transform)
-        num_classes = 10
-        config.data_variance = np.var(train_set.data / 255.0)
-
-    elif config.data_set == "FFHQ":
-        transform = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Resize(config.image_size),
-                transforms.Normalize((0.5,0.5,0.5), (1.0,1.0,1.0))
-            ])
-
-        dataset = torchvision.datasets.ImageFolder(PATH, transform=transform)
-        lengths = [int(len(dataset)*0.7), int(len(dataset)*0.1), int(len(dataset)*0.2)]
-        train_set, val_set, test_set = random_split(dataset, lengths)
-
-        config.data_variance = 1#np.var(train_set.data / 255.0)
-        num_classes = 0
-
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=config.batch_size, shuffle=True)
-    val_loader = torch.utils.data.DataLoader(val_set, batch_size=config.batch_size, shuffle=False)
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size=config.batch_size, shuffle=False)
-    
-    return train_loader, val_loader, test_loader, num_classes
-
+wandb.init(project="VQ-VAE", config=config)
+config = MakeConfig(config)
 
 def train(model, train_loader, optimiser, scheduler):
 
@@ -94,17 +29,17 @@ def train(model, train_loader, optimiser, scheduler):
 
         X_recon, quant_error, Z_prediction_error = model(X)
 
-        recon_error = F.mse_loss(X_recon, X) / config.data_variance
+        recon_error = F.mse_loss(X_recon, X)
         loss = recon_error + quant_error + Z_prediction_error
 
         loss.backward()
         optimiser.step()
         
-        train_res_recon_error += recon_error.item()
+        train_res_recon_error += recon_error.item() + Z_prediction_error.item()
 
     scheduler.step()
     wandb.log({
-        "Train Reconstruction Error": (train_res_recon_error + Z_prediction_error) / len(train_loader.dataset)
+        "Train Reconstruction Error": (train_res_recon_error) / len(train_loader.dataset)
     })
 
 
@@ -153,44 +88,41 @@ def test(model, test_loader):
 
 def main():
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data", type=str)
+
+    args = parser.parse_args()
+    PATH = args.data 
+
     use_cuda = not config.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
-    train_loader, val_loader, test_loader, num_classes = get_data_loaders()
-    checkpoint_location = f'checkpoints/{config.data_set}-{config.image_size}.ckpt'
-    output_location = f'outputs/{config.data_set}-{config.image_size}.ckpt'
+    train_loader, val_loader, test_loader, num_classes = get_data_loaders(config, PATH)
+    checkpoint_name = f'{config.data_set}-{config.image_size}.ckpt'
+    checkpoint_name = f'{config.prior}-' + checkpoint_name if config.prior != "None" else checkpoint_name
 
-    model = VQVAE(vq_config, prior_config, device).to(device)
-    if os.path.exists(checkpoint_location):
-        #model.load_state_dict(torch.load(checkpoint_location, map_location=device))
-        pre_state_dict = torch.load(checkpoint_location, map_location=device)
-        to_delete = []
-        for key in pre_state_dict.keys():
-            if key not in model.state_dict().keys():
-                to_delete.append(key)
+    checkpoint_location = "checkpoints/" + checkpoint_name
+    output_location = "checkpoints/" + checkpoint_name
 
-        for key in to_delete:
-            del pre_state_dict[key]
+    model = VQVAE(config, device).to(device)
+    model = load_from_checkpoint(model, checkpoint_location)
 
-        for key in model.state_dict().keys():
-            if key not in pre_state_dict.keys():
-                pre_state_dict[key] = model.state_dict()[key]
-        model.load_state_dict(pre_state_dict)
-
-    optimiser = optim.Adam(model.parameters(), lr=vq_config.learning_rate, amsgrad=False)
-    scheduler = optim.lr_scheduler.ExponentialLR(optimiser, gamma=vq_config.gamma)
+    optimiser = optim.Adam(model.parameters(), lr=config.learning_rate, amsgrad=False)
+    scheduler = optim.lr_scheduler.ExponentialLR(optimiser, gamma=config.gamma)
 
     wandb.watch(model, log="all")
 
     for epoch in range(config.epochs):
 
         if epoch > config.prior_start and not model.fit_prior:
+
             model.fit_prior = True
-            optimiser = optim.Adam(model.prior.parameters(), lr=prior_config.learning_rate)
-            scheduler = optim.lr_scheduler.ExponentialLR(optimiser, gamma=prior_config.gamma)
+            optimiser, scheduler = get_prior_optimiser(config, model.prior)
 
         train(model, train_loader, optimiser, scheduler)
-        test(model, test_loader)
+
+        if not epoch % 5:
+            test(model, test_loader)
 
         if not epoch % 5:
             torch.save(model.state_dict(), output_location)

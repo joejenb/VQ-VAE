@@ -21,8 +21,7 @@ config["data_set"] = "MNIST"
 config["representation_dim"] = 8
 config["commitment_cost"] = 0.25
 config["decay"] = 0.99
-config["prior_start"] = -1
 
-config["prior"] = "None"
+config["prior"] = "PixelCNN"
 config["prior_start"] = 100
 config["index_dim"] = 1
