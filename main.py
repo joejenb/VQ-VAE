@@ -105,7 +105,6 @@ def main():
     output_location = "checkpoints/" + checkpoint_name
 
     model = VQVAE(config, device).to(device)
-    print(model.prior)
     model = load_from_checkpoint(model, checkpoint_location)
 
     optimiser = optim.Adam(model.parameters(), lr=config.learning_rate, amsgrad=False)
@@ -126,6 +125,7 @@ def main():
             test(model, test_loader)
 
         if not epoch % 5:
+            print("Saving...")
             torch.save(model.state_dict(), output_location)
 
 if __name__ == '__main__':
