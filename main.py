@@ -102,7 +102,7 @@ def main():
     checkpoint_name = f'{config.prior}-' + checkpoint_name if config.prior != "None" else checkpoint_name
 
     checkpoint_location = "checkpoints/" + checkpoint_name
-    output_location = "checkpoints/" + checkpoint_name
+    output_location = "outputs/" + checkpoint_name
 
     model = VQVAE(config, device).to(device)
     model = load_from_checkpoint(model, checkpoint_location)
