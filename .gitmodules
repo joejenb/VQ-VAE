@@ -1,3 +1,0 @@
-[submodule "PixelCNN"]
-	path = priors/PixelCNN
-	url = https://github.com/joejenb/PixelCNN.git
