@@ -105,6 +105,7 @@ def main():
     output_location = "checkpoints/" + checkpoint_name
 
     model = VQVAE(config, device).to(device)
+    print(model.prior)
     model = load_from_checkpoint(model, checkpoint_location)
 
     optimiser = optim.Adam(model.parameters(), lr=config.learning_rate, amsgrad=False)
