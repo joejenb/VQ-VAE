@@ -5,7 +5,6 @@ from torch.autograd import Variable
 
 import numpy as np
 
-from Residual import ResidualStack
 from VectorQuantiser import VectorQuantiserEMA
 
 from utils import get_prior, straight_through_round
